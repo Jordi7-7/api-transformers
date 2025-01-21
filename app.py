@@ -11,7 +11,7 @@ CORS(app, resources={r"/*": {"origins": "*"}})
 
 
 # Ruta donde guardaste el modelo
-output_dir = "./imdb_bert_model"
+output_dir = "./transformers_imdb_bert_model"
 
 # Cargar el modelo y el tokenizador
 model = AutoModelForSequenceClassification.from_pretrained(output_dir)  # Cargar modelo desde el archivo `model.safetensors`
