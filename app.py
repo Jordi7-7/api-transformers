@@ -1,8 +1,16 @@
 from flask import Flask, request, jsonify, render_template, send_from_directory
-import torch
+
+
 from transformers import AutoTokenizer, AutoModelForSequenceClassification
 import time
 import os
+
+try:
+    import torch
+except ImportError:
+    print("No se cargo :c")
+finally:
+    print("acabo")
 
 # Inicializar Flask
 app = Flask(__name__)
