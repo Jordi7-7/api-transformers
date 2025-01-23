@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Análisis de Reseña de Película</title>
+    <style>
+        /* General styles */
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(to bottom, #f9f9f9, #e0e7ff);
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        .container {
+            background-color: #ffffff;
+            border-radius: 16px;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+            width: 90%;
+            max-width: 450px;
+            padding: 20px;
+            text-align: center;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .container:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.15);
+        }
+
+        h1 {
+            color: #3b82f6;
+            font-size: 1.8em;
+            margin-bottom: 15px;
+        }
+
+        p {
+            font-size: 0.95em;
+            color: #555;
+            margin-bottom: 20px;
+        }
+
+        textarea {
+            width: 100%;
+            height: 100px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 12px;
+            font-size: 1em;
+            margin-bottom: 15px;
+            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.05);
+            box-sizing: border-box;
+            /* Esto soluciona el problema */
+            transition: border-color 0.3s;
+        }
+
+        textarea:focus {
+            outline: none;
+            border-color: #3b82f6;
+        }
+
+        button {
+            width: 100%;
+            background-color: #3b82f6;
+            color: #fff;
+            border: none;
+            padding: 12px;
+            font-size: 1em;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background-color 0.3s, transform 0.2s;
+        }
+
+        button:hover {
+            background-color: #2563eb;
+            transform: translateY(-2px);
+        }
+
+        .results {
+            margin-top: 20px;
+            text-align: left;
+            font-size: 0.95em;
+        }
+
+        .results span {
+            font-weight: bold;
+        }
+
+        .negative {
+            color: #ef4444;
+        }
+
+        .positive {
+            color: #10b981;
+        }
+
+        .footer {
+            font-size: 0.8em;
+            color: #aaa;
+            margin-top: 10px;
+        }
+
+        @media (max-width: 500px) {
+            h1 {
+                font-size: 1.5em;
+            }
+
+            textarea {
+                height: 80px;
+            }
+
+            button {
+                font-size: 0.9em;
+                padding: 10px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>Análisis de Reseña de Película</h1>
+        <p>Escribe una reseña para saber si es positiva o negativa.</p>
+        <textarea id="review" placeholder="Escribe tu reseña aquí..."></textarea>
+        <button onclick="analyzeReview()">Enviar Reseña</button>
+
+        <div class="results" id="results" style="display: none;">
+            <p><span>Reseña:</span> <span id="resultReview"></span></p>
+            <p><span>Sentimiento:</span> <span id="resultSentiment" class=""></span></p>
+            <p><span>Clase Predicha:</span> <span id="resultClass"></span></p>
+            <p><span>Tiempo de Inferencia:</span> <span id="resultTime"></span></p>
+        </div>
+
+        <div class="footer">
+            <p>Predicciones con modelo Transformers</p>
+        </div>
+    </div>
+
+    <script>
+        async function analyzeReview() {
+            const review = document.getElementById("review").value;
+
+            if (!review.trim()) {
+                alert("Por favor, escribe una reseña.");
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append("review", review);
+
+            try {
+                const response = await fetch("/predict_api", {
+                    method: "POST",
+                    body: formData
+                });
+
+                if (!response.ok) {
+                    throw new Error("Error en la solicitud.");
+                }
+
+                const data = await response.json();
+
+                // Mostrar resultados
+                document.getElementById("results").style.display = "block";
+                document.getElementById("resultReview").textContent = data.review;
+                document.getElementById("resultSentiment").textContent = data.sentiment;
+                document.getElementById("resultClass").textContent = data.predicted_class;
+                document.getElementById("resultTime").textContent = data.inference_time;
+
+                // Cambiar color según el sentimiento
+                const sentimentElement = document.getElementById("resultSentiment");
+                sentimentElement.className = data.sentiment === "positivo" ? "positive" : "negative";
+            } catch (error) {
+                alert("Error: " + error.message);
+            }
+        }
+    </script>
+</body>
+
+</html>

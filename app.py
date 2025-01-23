@@ -1,17 +1,14 @@
-from flask import Flask, request, jsonify
-from flask_cors import CORS
+from flask import Flask, request, jsonify, render_template, send_from_directory
 import torch
 from transformers import AutoTokenizer, AutoModelForSequenceClassification
 import time
-
+import os
 
 # Inicializar Flask
 app = Flask(__name__)
-CORS(app, resources={r"/*": {"origins": "*"}})
-
 
 # Ruta donde guardaste el modelo
-output_dir = "./transformers_imdb_bert_model"
+output_dir = "transformers_imdb_bert_model"
 
 # Cargar el modelo y el tokenizador
 model = AutoModelForSequenceClassification.from_pretrained(output_dir)  # Cargar modelo desde el archivo `model.safetensors`
@@ -21,51 +18,37 @@ tokenizer = AutoTokenizer.from_pretrained(output_dir)  # Cargar el tokenizador d
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 model.to(device)  # Enviar el modelo al dispositivo
 
-# Ruta de prueba
-@app.route('/test', methods=['GET'])
-def hello_world():
-    texto = "Me encantó este producto, es excelente"
-    return jsonify({'message': texto})
+# Ruta para servir el archivo index.html
+@app.route('/')
+def home():
+    # Renderiza index.html desde el directorio actual
+    return send_from_directory(os.getcwd(), "index.html")
 
-
+# Ruta de predicción
 @app.route('/predict_api', methods=['POST'])
 def predict_api():
-    """
-    Endpoint para realizar predicciones con una imagen enviada como multipart/form-data.
-    """ 
     if 'review' not in request.form:
         return jsonify({"error": "No se proporcionó el campo 'review'"}), 400
 
     try:
-
-        # Leer la reseña desde form-data
         review = request.form['review']
         if not isinstance(review, str) or not review.strip():
             return jsonify({"error": "La reseña debe ser un texto válido"}), 400
 
-        # Tokenizar el texto de prueba
         inputs = tokenizer(review, return_tensors="pt", truncation=True, padding=True, max_length=128)
         inputs = {key: value.to(device) for key, value in inputs.items()}  # Enviar datos al mismo dispositivo que el modelo
 
-        # Cambiar el modelo a modo de evaluación
-        model.eval()  
-
-        # Hacer la predicción
-        # Medir el tiempo de inferencia
-        start_time = time.time()  # Inicio del temporizador
+        model.eval()
+        start_time = time.time()
         with torch.no_grad():
             outputs = model(**inputs)
-        end_time = time.time()  # Fin del temporizador
+        end_time = time.time()
 
-        inference_time = end_time - start_time  # Tiempo de inferencia en segundos
+        inference_time = end_time - start_time
 
-        # Obtener la clase predicha
         predicted_class = torch.argmax(outputs.logits, dim=-1).item()
-
-        # Mapear resultado a positivo/negativo
         sentiment = "positivo" if predicted_class == 1 else "negativo"
 
-        # Formatear y devolver la respuesta
         return jsonify({
             "review": review,
             "sentiment": sentiment,
